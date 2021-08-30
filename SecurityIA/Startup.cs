@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using SecurityIA.Data;
+using SecurityIA.Data.Entities;
+using SecurityIA.Helpers;
 
 namespace SecurityIA
 {
@@ -24,6 +24,38 @@ namespace SecurityIA
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddIdentity<User, IdentityRole>(x =>
+            {
+                //x.Tokens.AuthenticatorTokenProvider = TokenOptions.DefaultAuthenticatorProvider;
+                //x.SignIn.RequireConfirmedEmail = true;
+                x.User.RequireUniqueEmail = true;
+                x.Password.RequireDigit = true;
+                x.Password.RequiredUniqueChars = 0;
+                x.Password.RequireLowercase = true;
+                x.Password.RequireNonAlphanumeric = true;
+                x.Password.RequireUppercase = true;
+            });
+            //   .AddDefaultTokenProviders()
+            //   .AddEntityFrameworkStores<DataContext>();
+            //services.AddAuthentication()
+            //    .AddCookie()
+            //    .AddJwtBearer(cfg =>
+            //    {
+            //        cfg.TokenValidationParameters = new TokenValidationParameters
+            //        {
+            //            ValidIssuer = Configuration["Tokens:Issuer"],
+            //            ValidAudience = Configuration["Tokens:Audience"],
+            //            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Tokens:Key"]))
+            //        };
+            //    });
+            services.AddDbContext<DataContext>(x =>
+            {
+                x.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+            });
+            services.AddScoped<IUserHelper, UserHelper>();
+            services.AddScoped<ICombosHelper, CombosHelper>();
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,7 +73,7 @@ namespace SecurityIA
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            app.UseAuthentication();
             app.UseRouting();
 
             app.UseAuthorization();
